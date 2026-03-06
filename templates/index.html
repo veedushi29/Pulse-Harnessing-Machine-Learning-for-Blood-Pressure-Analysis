@@ -1,17 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>PULSE — Blood Pressure Analysis</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link
-    href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&family=Bebas+Neue&display=swap"
-    rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&family=Bebas+Neue&display=swap" rel="stylesheet">
 </head>
-
 <body>
 
   <!-- ECG background line -->
@@ -26,7 +22,7 @@
       980,60 1000,60 1010,20 1020,100 1030,60 1050,60
       1130,60 1150,60 1160,20 1170,100 1180,60 1200,60
       1280,60 1300,60 1310,20 1320,100 1330,60 1440,60
-    " />
+    "/>
   </svg>
 
   <!-- ── HEADER ─────────────────────────────────────────── -->
@@ -47,8 +43,7 @@
   <section class="hero">
     <div class="hero-text">
       <h1>Know Your <em>Numbers.</em><br>Understand Your <em>Risk.</em></h1>
-      <p>Enter your clinical data below for an instant hypertension stage classification using machine learning and
-        ACC/AHA guidelines.</p>
+      <p>Enter your clinical data below for an instant hypertension stage classification using machine learning and ACC/AHA guidelines.</p>
     </div>
   </section>
 
@@ -151,9 +146,8 @@
         <div class="empty-state" id="empty-state">
           <div class="empty-icon">
             <svg viewBox="0 0 80 80" fill="none">
-              <circle cx="40" cy="40" r="36" stroke="#2a2a3e" stroke-width="2" />
-              <path d="M20 40 Q28 24 36 40 Q40 48 44 40 Q52 24 60 40" stroke="#3a3a5c" stroke-width="2.5" fill="none"
-                stroke-linecap="round" />
+              <circle cx="40" cy="40" r="36" stroke="#2a2a3e" stroke-width="2"/>
+              <path d="M20 40 Q28 24 36 40 Q40 48 44 40 Q52 24 60 40" stroke="#3a3a5c" stroke-width="2.5" fill="none" stroke-linecap="round"/>
             </svg>
           </div>
           <p>Enter your blood pressure and click<br><strong>Analyze Blood Pressure</strong></p>
@@ -228,8 +222,7 @@
           </div>
 
           <div class="disclaimer">
-            ⚕️ This tool is for decision-support only. It does not constitute a medical diagnosis. Always consult a
-            qualified healthcare professional.
+            ⚕️ This tool is for decision-support only. It does not constitute a medical diagnosis. Always consult a qualified healthcare professional.
           </div>
 
         </div>
@@ -252,36 +245,11 @@
           </tr>
         </thead>
         <tbody>
-          <tr class="s0">
-            <td><span class="dot-s s0-dot"></span>Normal</td>
-            <td>&lt; 120</td>
-            <td>&lt; 80</td>
-            <td>Maintain healthy lifestyle</td>
-          </tr>
-          <tr class="s1">
-            <td><span class="dot-s s1-dot"></span>Elevated</td>
-            <td>120–129</td>
-            <td>&lt; 80</td>
-            <td>Lifestyle modification</td>
-          </tr>
-          <tr class="s2">
-            <td><span class="dot-s s2-dot"></span>Stage 1</td>
-            <td>130–139</td>
-            <td>80–89</td>
-            <td>Lifestyle + possible meds</td>
-          </tr>
-          <tr class="s3">
-            <td><span class="dot-s s3-dot"></span>Stage 2</td>
-            <td>≥ 140</td>
-            <td>≥ 90</td>
-            <td>Medication required</td>
-          </tr>
-          <tr class="s4">
-            <td><span class="dot-s s4-dot"></span>Crisis</td>
-            <td>&gt; 180</td>
-            <td>&gt; 120</td>
-            <td>Emergency care immediately</td>
-          </tr>
+          <tr class="s0"><td><span class="dot-s s0-dot"></span>Normal</td><td>&lt; 120</td><td>&lt; 80</td><td>Maintain healthy lifestyle</td></tr>
+          <tr class="s1"><td><span class="dot-s s1-dot"></span>Elevated</td><td>120–129</td><td>&lt; 80</td><td>Lifestyle modification</td></tr>
+          <tr class="s2"><td><span class="dot-s s2-dot"></span>Stage 1</td><td>130–139</td><td>80–89</td><td>Lifestyle + possible meds</td></tr>
+          <tr class="s3"><td><span class="dot-s s3-dot"></span>Stage 2</td><td>≥ 140</td><td>≥ 90</td><td>Medication required</td></tr>
+          <tr class="s4"><td><span class="dot-s s4-dot"></span>Crisis</td><td>&gt; 180</td><td>&gt; 120</td><td>Emergency care immediately</td></tr>
         </tbody>
       </table>
     </div>
@@ -292,114 +260,114 @@
     <span>Decision-support only · Not a substitute for medical advice</span>
   </footer>
 
-  <script>
-    // ── Toggle buttons ─────────────────────────────────────
-    document.querySelectorAll('#activity-toggle .toggle-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('#activity-toggle .toggle-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        document.getElementById('activity').value = btn.dataset.val;
-      });
+<script>
+  // ── Toggle buttons ─────────────────────────────────────
+  document.querySelectorAll('#activity-toggle .toggle-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#activity-toggle .toggle-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('activity').value = btn.dataset.val;
     });
+  });
 
-    // ── Form submit ────────────────────────────────────────
-    async function handleSubmit() {
-      const sysInput = parseFloat(document.getElementById('systolic').value);
-      const diaInput = parseFloat(document.getElementById('diastolic').value);
+  // ── Form submit ────────────────────────────────────────
+  async function handleSubmit() {
+    const sysInput = parseFloat(document.getElementById('systolic').value);
+    const diaInput = parseFloat(document.getElementById('diastolic').value);
 
-      if (!sysInput || !diaInput) {
-        alert('Please enter both Systolic and Diastolic values.');
-        return;
-      }
-
-      const btn = document.getElementById('predict-btn');
-      btn.classList.add('loading');
-      btn.querySelector('.btn-text').textContent = 'Analyzing…';
-
-      // ── Payload: raw numbers + all other fields ──────────
-      const payload = {
-        systolic: sysInput,
-        diastolic: diaInput,
-        age: parseFloat(document.getElementById('age').value) || 40,
-        bmi: parseFloat(document.getElementById('bmi').value) || 22,
-        heart_rate: parseFloat(document.getElementById('heart_rate').value) || 75,
-        alcohol: parseFloat(document.getElementById('alcohol').value) || 0,
-        activity: parseInt(document.getElementById('activity').value),
-        smoking: document.getElementById('smoking').checked ? 1 : 0,
-        diabetes: document.getElementById('diabetes').checked ? 1 : 0,
-        family_hx: document.getElementById('family_hx').checked ? 1 : 0,
-      };
-
-      try {
-        const res = await fetch('/predict', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-        const data = await res.json();
-        if (data.success) renderResults(data);
-        else alert('Error: ' + data.error);
-      } catch (err) {
-        alert('Connection error. Is the Flask server running?');
-      } finally {
-        btn.classList.remove('loading');
-        btn.querySelector('.btn-text').textContent = 'Analyze Blood Pressure';
-      }
+    if (!sysInput || !diaInput) {
+      alert('Please enter both Systolic and Diastolic values.');
+      return;
     }
 
-    // ── Render results ─────────────────────────────────────
-    function renderResults(d) {
-      document.getElementById('empty-state').style.display = 'none';
-      const content = document.getElementById('results-content');
-      content.style.display = 'block';
-      content.classList.remove('fade-in');
-      void content.offsetWidth; // force reflow for re-animation
-      content.classList.add('fade-in');
+    const btn = document.getElementById('predict-btn');
+    btn.classList.add('loading');
+    btn.querySelector('.btn-text').textContent = 'Analyzing…';
 
-      const stageColors = ['#4CAF50', '#FFD700', '#FFB347', '#FF6B35', '#FF2D2D'];
-      const color = d.color || stageColors[d.stage] || '#4CAF50';
+    // ── Payload: raw numbers + all other fields ──────────
+    const payload = {
+      systolic:        sysInput,
+      diastolic:       diaInput,
+      age:             parseFloat(document.getElementById('age').value)        || 40,
+      bmi:             parseFloat(document.getElementById('bmi').value)         || 22,
+      heart_rate:      parseFloat(document.getElementById('heart_rate').value)  || 75,
+      alcohol:         parseFloat(document.getElementById('alcohol').value)     || 0,
+      activity:        parseInt(document.getElementById('activity').value),
+      smoking:         document.getElementById('smoking').checked  ? 1 : 0,
+      diabetes:        document.getElementById('diabetes').checked ? 1 : 0,
+      family_hx:       document.getElementById('family_hx').checked ? 1 : 0,
+    };
 
-      // Stage badge
-      const badge = document.getElementById('stage-badge');
-      badge.style.background = color + '22';
-      badge.style.borderColor = color;
-      badge.style.color = color;
-      document.getElementById('stage-num').textContent = d.stage;
-      document.getElementById('stage-label').textContent = d.label;
-      document.getElementById('stage-label').style.color = color;
-      document.getElementById('stage-summary').textContent = d.summary;
+    try {
+      const res  = await fetch('/predict', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (data.success) renderResults(data);
+      else alert('Error: ' + data.error);
+    } catch (err) {
+      alert('Connection error. Is the Flask server running?');
+    } finally {
+      btn.classList.remove('loading');
+      btn.querySelector('.btn-text').textContent = 'Analyze Blood Pressure';
+    }
+  }
 
-      // Vitals — backend now always returns these as numbers
-      document.getElementById('res-systolic').textContent = d.systolic ?? '—';
-      document.getElementById('res-diastolic').textContent = d.diastolic ?? '—';
-      document.getElementById('res-map').textContent = d.map != null ? d.map : '—';
-      document.getElementById('res-pp').textContent = d.pulse_pressure != null ? d.pulse_pressure : '—';
+  // ── Render results ─────────────────────────────────────
+  function renderResults(d) {
+    document.getElementById('empty-state').style.display = 'none';
+    const content = document.getElementById('results-content');
+    content.style.display = 'block';
+    content.classList.remove('fade-in');
+    void content.offsetWidth; // force reflow for re-animation
+    content.classList.add('fade-in');
 
-      // Stage meter (0–3 mapped to 0–100%)
-      const pct = (d.stage / 3) * 100;
-      document.getElementById('meter-fill').style.width = Math.max(pct, 5) + '%';
-      document.getElementById('meter-fill').style.background = `linear-gradient(90deg, #4CAF50, ${color})`;
-      document.getElementById('meter-cursor').style.left = Math.max(pct - 1, 0) + '%';
-      document.getElementById('meter-cursor').style.borderColor = color;
+    const stageColors = ['#4CAF50', '#FFD700', '#FFB347', '#FF6B35', '#FF2D2D'];
+    const color = d.color || stageColors[d.stage] || '#4CAF50';
 
-      // Confidence badge (ML model only)
-      const confRow = document.getElementById('confidence-row');
-      if (d.confidence != null) {
-        confRow.style.display = 'flex';
-        document.getElementById('conf-val').textContent = d.confidence + '%';
-      } else {
-        confRow.style.display = 'none';
-      }
+    // Stage badge
+    const badge = document.getElementById('stage-badge');
+    badge.style.background    = color + '22';
+    badge.style.borderColor   = color;
+    badge.style.color         = color;
+    document.getElementById('stage-num').textContent     = d.stage;
+    document.getElementById('stage-label').textContent   = d.label;
+    document.getElementById('stage-label').style.color   = color;
+    document.getElementById('stage-summary').textContent = d.summary;
 
-      // Probability bars (ML model only)
-      const probaSection = document.getElementById('proba-section');
-      const probaContainer = document.getElementById('proba-bars');
-      if (d.probabilities) {
-        probaSection.style.display = 'block';
-        probaContainer.innerHTML = '';
-        const barColors = ['#4CAF50', '#FFD700', '#FFB347', '#FF2D2D'];
-        Object.entries(d.probabilities).forEach(([label, pct], i) => {
-          probaContainer.innerHTML += `
+    // Vitals — backend now always returns these as numbers
+    document.getElementById('res-systolic').textContent = d.systolic  ?? '—';
+    document.getElementById('res-diastolic').textContent= d.diastolic ?? '—';
+    document.getElementById('res-map').textContent       = d.map       != null ? d.map  : '—';
+    document.getElementById('res-pp').textContent        = d.pulse_pressure != null ? d.pulse_pressure : '—';
+
+    // Stage meter (0–3 mapped to 0–100%)
+    const pct = (d.stage / 3) * 100;
+    document.getElementById('meter-fill').style.width       = Math.max(pct, 5) + '%';
+    document.getElementById('meter-fill').style.background  = `linear-gradient(90deg, #4CAF50, ${color})`;
+    document.getElementById('meter-cursor').style.left      = Math.max(pct - 1, 0) + '%';
+    document.getElementById('meter-cursor').style.borderColor = color;
+
+    // Confidence badge (ML model only)
+    const confRow = document.getElementById('confidence-row');
+    if (d.confidence != null) {
+      confRow.style.display = 'flex';
+      document.getElementById('conf-val').textContent = d.confidence + '%';
+    } else {
+      confRow.style.display = 'none';
+    }
+
+    // Probability bars (ML model only)
+    const probaSection = document.getElementById('proba-section');
+    const probaContainer = document.getElementById('proba-bars');
+    if (d.probabilities) {
+      probaSection.style.display = 'block';
+      probaContainer.innerHTML = '';
+      const barColors = ['#4CAF50', '#FFD700', '#FFB347', '#FF2D2D'];
+      Object.entries(d.probabilities).forEach(([label, pct], i) => {
+        probaContainer.innerHTML += `
           <div class="proba-row">
             <span class="proba-lbl">${label}</span>
             <div class="proba-track">
@@ -407,27 +375,26 @@
             </div>
             <span class="proba-pct">${pct}%</span>
           </div>`;
-        });
-      } else {
-        probaSection.style.display = 'none';
-      }
-
-      // Recommendations
-      const list = document.getElementById('recs-list');
-      list.innerHTML = '';
-      (d.recommendations || []).forEach(r => {
-        const li = document.createElement('li');
-        li.className = 'rec-item priority-' + r.priority;
-        li.innerHTML = `<span class="rec-icon">${r.icon}</span><span>${r.text}</span>`;
-        list.appendChild(li);
       });
-
-      // Scroll to results on mobile
-      if (window.innerWidth < 900) {
-        document.getElementById('result-panel').scrollIntoView({ behavior: 'smooth' });
-      }
+    } else {
+      probaSection.style.display = 'none';
     }
-  </script>
-</body>
 
+    // Recommendations
+    const list = document.getElementById('recs-list');
+    list.innerHTML = '';
+    (d.recommendations || []).forEach(r => {
+      const li = document.createElement('li');
+      li.className = 'rec-item priority-' + r.priority;
+      li.innerHTML = `<span class="rec-icon">${r.icon}</span><span>${r.text}</span>`;
+      list.appendChild(li);
+    });
+
+    // Scroll to results on mobile
+    if (window.innerWidth < 900) {
+      document.getElementById('result-panel').scrollIntoView({ behavior: 'smooth' });
+    }
+  }
+</script>
+</body>
 </html>
