@@ -18,7 +18,7 @@ class HypertensionModel:
         self.encode_maps = {
             'Gender':        {'Male': 0, 'Female': 1},
             'Age':           {'18-34': 0, '35-50': 1, '51-64': 2, '65+': 3},
-            'Severity':      {'None': 0, 'Mild': 1, 'Moderate': 2, 'Sever': 3, 'Severe': 3},
+            'Severity':      {'None': 0, 'Mild': 1, 'Moderate': 2, 'Severe': 3},
             'Whendiagnoused':{'<1 Year': 0, '1 - 5 Years': 1, '>5 Years': 2},
             'Systolic':      {'100+': 0, '111 - 120': 1, '121- 130': 2, '121 - 130': 2, '130+': 3},
             'Diastolic':     {'70 - 80': 0, '81 - 90': 1, '91 - 100': 2, '100+': 3, '130+': 4},
@@ -311,4 +311,4 @@ def health():
     })
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(host="0.0.0.0", port=5000)
