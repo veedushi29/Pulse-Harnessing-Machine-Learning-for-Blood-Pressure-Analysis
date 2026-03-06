@@ -3,6 +3,64 @@ import pickle, os, numpy as np
 
 app = Flask(__name__)
 
+# ── HypertensionModel — MUST be defined before pickle.load ───
+# This is the exact class saved inside logreg_model.pkl by the
+# Colab training script. Pickle needs it present at load time.
+class HypertensionModel:
+    def __init__(self, model, scaler, features):
+        self.model   = model
+        self.scaler  = scaler
+        self.features = features
+        self.stage_labels = {
+            0: 'Normal',
+            1: 'Stage 1 Hypertension',
+            2: 'Stage 2 Hypertension',
+            3: 'Hypertensive Crisis',
+        }
+        self.encode_maps = {
+            'Gender':        {'Male': 0, 'Female': 1},
+            'Age':           {'18-34': 0, '35-50': 1, '51-64': 2, '65+': 3},
+            'Severity':      {'None': 0, 'Mild': 1, 'Moderate': 2, 'Sever': 3, 'Severe': 3},
+            'Whendiagnoused':{'<1 Year': 0, '1 - 5 Years': 1, '>5 Years': 2},
+            'Systolic':      {'100+': 0, '111 - 120': 1, '121- 130': 2, '121 - 130': 2, '130+': 3},
+            'Diastolic':     {'70 - 80': 0, '81 - 90': 1, '91 - 100': 2, '100+': 3, '130+': 4},
+        }
+        self.binary_cols = [
+            'History', 'Patient', 'TakeMedication',
+            'BreathShortness', 'VisualChanges', 'NoseBleeding', 'ControlledDiet',
+        ]
+
+    def predict_patient(self, data):
+        row = []
+        for feat in self.features:
+            val = str(data.get(feat, '')).strip()
+            if feat in self.encode_maps:
+                val = self.encode_maps[feat].get(val, 0)
+            elif feat in self.binary_cols:
+                val = 1 if val in ['Yes', 'yes', '1'] else 0
+            else:
+                val = 0
+            row.append(float(val))
+        X_sc  = self.scaler.transform(np.array(row).reshape(1, -1))
+        stage = int(self.model.predict(X_sc)[0])
+        proba = self.model.predict_proba(X_sc)[0]
+        return {
+            'stage':         stage,
+            'label':         self.stage_labels[stage],
+            'confidence':    round(float(max(proba)) * 100, 1),
+            'probabilities': {
+                self.stage_labels[i]: round(float(p) * 100, 1)
+                for i, p in enumerate(proba)
+            },
+        }
+
+    def predict(self, X):
+        return self.model.predict(self.scaler.transform(X))
+
+    def predict_proba(self, X):
+        return self.model.predict_proba(self.scaler.transform(X))
+
+
 # ── Load model ───────────────────────────────────────────────
 MODEL_PATH = os.path.join(os.path.dirname(__file__), 'logreg_model.pkl')
 model = None
@@ -106,39 +164,47 @@ def predict():
 
         confidence = None
         proba_map  = None
-        stage      = None
 
-        # ── Try ML model first ────────────────────────────────
+        # ── Step 1: Rule-based stage is always the floor ──────
+        # ACC/AHA BP thresholds are deterministic ground truth.
+        # 148/80 = Stage 2, no matter what the ML model thinks.
+        rule_stage = numeric_stage(sys_val, dia_val)
+        stage      = rule_stage
+        print(f"[Rules] sys={sys_val} dia={dia_val} → rule_stage={rule_stage}")
+
+        # ── Step 2: ML model can raise stage, never lower it ──
+        # e.g. severe symptoms can push Stage1→Stage2,
+        # but it can NEVER call 148/80 "Normal".
         if model is not None:
             try:
                 model_input = {
-                    'Gender':        'Male'   if data.get('gender', 'Male') == 'Male' else 'Female',
-                    'Age':           age_bucket(float(data.get('age', 40))),
-                    'History':       'Yes'    if data.get('family_hx') else 'No',
-                    'Patient':       'Yes'    if data.get('existing_patient') else 'No',
-                    'TakeMedication':'Yes'    if data.get('on_medication') else 'No',
-                    'Severity':      data.get('symptom_severity', 'None'),
+                    'Gender':         'Male'  if data.get('gender', 'Male') == 'Male' else 'Female',
+                    'Age':            age_bucket(float(data.get('age', 40))),
+                    'History':        'Yes'   if data.get('family_hx') else 'No',
+                    'Patient':        'Yes'   if data.get('existing_patient') else 'No',
+                    'TakeMedication': 'Yes'   if data.get('on_medication') else 'No',
+                    'Severity':       data.get('symptom_severity', 'None'),
                     'BreathShortness':'Yes'   if data.get('shortness_breath') else 'No',
-                    'VisualChanges': 'Yes'    if data.get('visual_changes') else 'No',
-                    'NoseBleeding':  'Yes'    if data.get('nosebleeds') else 'No',
-                    'Whendiagnoused':'<1 Year',
-                    'Systolic':      sys_bucket(sys_val),
-                    'Diastolic':     dia_bucket(dia_val),
-                    'ControlledDiet':'Yes'    if data.get('controlled_diet') else 'No',
+                    'VisualChanges':  'Yes'   if data.get('visual_changes') else 'No',
+                    'NoseBleeding':   'Yes'   if data.get('nosebleeds') else 'No',
+                    'Whendiagnoused': '<1 Year',
+                    'Systolic':       sys_bucket(sys_val),
+                    'Diastolic':      dia_bucket(dia_val),
+                    'ControlledDiet': 'Yes'   if data.get('controlled_diet') else 'No',
                 }
                 result     = model.predict_patient(model_input)
-                stage      = result['stage']
+                ml_stage   = result['stage']
                 confidence = result['confidence']
                 proba_map  = result['probabilities']
-                print(f"[ML] sys={sys_val} dia={dia_val} → stage={stage} conf={confidence}%")
+                # max() ensures ML never downgrades a high BP reading
+                stage = max(rule_stage, ml_stage)
+                print(f"[ML] ml_stage={ml_stage} rule_stage={rule_stage} → final stage={stage} conf={confidence}%")
+                # If ML was overridden, hide its probabilities — they'd be misleading
+                if ml_stage < rule_stage:
+                    confidence = None
+                    proba_map  = None
             except Exception as e:
-                print(f"[ML error] {e} — falling back to rules.")
-                stage = None
-
-        # ── Fallback: rule-based from raw numbers ─────────────
-        if stage is None:
-            stage = numeric_stage(sys_val, dia_val)
-            print(f"[Rules] sys={sys_val} dia={dia_val} → stage={stage}")
+                print(f"[ML error] {e} — keeping rule_stage={stage}")
 
         stage_info = STAGES[stage]
         recs       = get_recommendations(stage, data)
