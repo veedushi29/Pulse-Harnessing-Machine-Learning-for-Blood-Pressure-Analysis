@@ -991,7 +991,6 @@ select:focus {
 #proba-section {
   margin-bottom: 1.2rem;
 }
-
 /* ── ADDITIONS: Hypotension table row ───────────────────────── */
 .s-hypo-dot {
   background: #2979ff;
@@ -1043,13 +1042,8 @@ select:focus {
   font-size: 0.85rem;
 }
 
-.alert-item.alert-danger .alert-title-text {
-  color: #ff7070;
-}
-
-.alert-item.alert-warning .alert-title-text {
-  color: #ffb347;
-}
+.alert-item.alert-danger .alert-title-text { color: #ff7070; }
+.alert-item.alert-warning .alert-title-text { color: #ffb347; }
 
 .alert-body-text {
   color: var(--text-dim);
