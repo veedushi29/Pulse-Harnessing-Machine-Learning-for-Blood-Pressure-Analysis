@@ -1,0 +1,189 @@
+# ============================================================
+#  PULSE — Hypertension Model Training
+
+
+# CELL 1 — Mount Drive
+from google.colab import drive
+drive.mount('/content/drive')
+
+# CELL 2 — Imports (no extra installs needed — all in Colab by default)
+import pandas as pd, numpy as np, pickle, warnings
+import matplotlib.pyplot as plt
+import seaborn as sns
+warnings.filterwarnings('ignore')
+
+from sklearn.linear_model    import LogisticRegression
+from sklearn.ensemble        import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.tree            import DecisionTreeClassifier
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.preprocessing   import StandardScaler
+from sklearn.utils           import resample
+from sklearn.metrics         import classification_report, confusion_matrix, accuracy_score, f1_score
+print("Libraries ready.")
+
+# CELL 3 — Load dataset
+FILE_PATH = '/content/drive/MyDrive/patient_data.csv'   # update if needed
+df = pd.read_csv(FILE_PATH)
+df.columns = df.columns.str.strip()
+for col in df.select_dtypes(include='object').columns:
+    df[col] = df[col].str.strip()
+df.rename(columns={'C': 'Gender'}, inplace=True)
+print(f"Loaded: {df.shape}  Columns: {df.columns.tolist()}")
+print(df.head(3))
+
+# CELL 4 — Clean & Encode
+df['Stages'] = df['Stages'].str.strip().str.upper().replace({
+    'HYPERTENSION (STAGE-1)': 'Stage1', 'HYPERTENSION (STAGE-2)': 'Stage2',
+    'HYPERTENSION (STAGE-2).': 'Stage2', 'HYPERTENSIVE CRISIS': 'Crisis',
+    'HYPERTENSIVE CRISI': 'Crisis', 'NORMAL': 'Normal',
+})
+df['Gender']         = df['Gender'].map({'Male':0,'Female':1})
+df['Age']            = df['Age'].map({'18-34':0,'35-50':1,'51-64':2,'65+':3})
+df['Severity']       = df['Severity'].map({'Mild':1,'Moderate':2,'Sever':3})
+df['Whendiagnoused'] = df['Whendiagnoused'].map({'<1 Year':0,'1 - 5 Years':1,'>5 Years':2})
+df['Systolic']       = df['Systolic'].map({'100+':0,'111 - 120':1,'121- 130':2,'121 - 130':2,'130+':3})
+df['Diastolic']      = df['Diastolic'].map({'70 - 80':0,'81 - 90':1,'91 - 100':2,'100+':3,'130+':4})
+for col in ['History','Patient','TakeMedication','BreathShortness','VisualChanges','NoseBleeding','ControlledDiet']:
+    df[col] = df[col].map({'Yes':1,'No':0})
+df['Stages'] = df['Stages'].map({'Normal':0,'Stage1':1,'Stage2':2,'Crisis':3})
+df.dropna(inplace=True)
+print(f"After encoding: {df.shape}  NaN: {df.isnull().sum().sum()}")
+print(df['Stages'].value_counts().sort_index())
+
+# CELL 5 — EDA
+FEATURES = ['Gender','Age','History','Patient','TakeMedication','Severity',
+            'BreathShortness','VisualChanges','NoseBleeding','Whendiagnoused',
+            'Systolic','Diastolic','ControlledDiet']
+X = df[FEATURES].astype(float)
+y = df['Stages'].astype(int)
+stage_names  = ['Normal','Stage 1','Stage 2','Crisis']
+stage_colors = ['#4CAF50','#FFB347','#FF6B35','#FF2D2D']
+
+fig, axes = plt.subplots(2,3,figsize=(16,9))
+fig.suptitle('Patient Data — EDA Report', fontsize=16, fontweight='bold')
+counts = y.value_counts().sort_index()
+axes[0,0].bar(stage_names, counts.values, color=stage_colors)
+axes[0,0].set_title('Stage Distribution')
+[axes[0,0].text(i,v+3,str(v),ha='center',fontweight='bold') for i,v in enumerate(counts.values)]
+for i,s in enumerate(sorted(y.unique())):
+    vals = X[y==s]['Systolic'].values
+    axes[0,1].scatter(np.random.normal(i,0.08,len(vals)),vals,color=stage_colors[i],alpha=0.4,s=15)
+axes[0,1].set_xticks(range(4)); axes[0,1].set_xticklabels(stage_names); axes[0,1].set_title('Systolic by Stage')
+X['Age'].value_counts().sort_index().plot(kind='bar',ax=axes[0,2],color='#5c7cfa')
+axes[0,2].set_xticklabels(['18-34','35-50','51-64','65+'],rotation=0); axes[0,2].set_title('Age Distribution')
+pd.crosstab(y,X['Severity']).plot(kind='bar',ax=axes[1,0],colormap='RdYlGn_r')
+axes[1,0].set_xticklabels(stage_names,rotation=0); axes[1,0].set_title('Severity by Stage')
+corr=pd.concat([X,y],axis=1).corr()
+sns.heatmap(corr[['Stages']].drop('Stages').sort_values('Stages'),annot=True,fmt='.2f',cmap='RdYlGn_r',ax=axes[1,1],cbar=False)
+axes[1,1].set_title('Feature Correlation with Stage')
+pd.concat([X[['BreathShortness','VisualChanges','NoseBleeding']],y],axis=1).groupby('Stages')[['BreathShortness','VisualChanges','NoseBleeding']].mean().plot(kind='bar',ax=axes[1,2],color=['#5c7cfa','#f59f00','#f03e3e'])
+axes[1,2].set_xticklabels(stage_names,rotation=0); axes[1,2].set_title('Symptom Prevalence by Stage')
+plt.tight_layout(); plt.savefig('eda_report.png',dpi=150,bbox_inches='tight'); plt.show()
+print("EDA saved.")
+
+# CELL 6 — Balance classes
+df_work = pd.concat([X,y],axis=1)
+max_size = int(y.value_counts().max())
+df_bal = pd.concat([resample(df_work[df_work['Stages']==c],replace=True,n_samples=max_size,random_state=42) for c in sorted(y.unique())])
+X_bal = df_bal[FEATURES].astype(float); y_bal = df_bal['Stages'].astype(int)
+print(f"Balanced: {dict(y_bal.value_counts().sort_index())}")
+
+# CELL 7 — Split & scale
+X_train,X_test,y_train,y_test = train_test_split(X_bal,y_bal,test_size=0.2,random_state=42,stratify=y_bal)
+scaler = StandardScaler()
+X_train_sc = scaler.fit_transform(X_train)
+X_test_sc  = scaler.transform(X_test)
+print(f"Train: {len(X_train)}  Test: {len(X_test)}")
+
+# CELL 8 — Train & compare all models
+models = {
+    'Logistic Regression': LogisticRegression(C=1.0,max_iter=1000,random_state=42),
+    'Decision Tree':       DecisionTreeClassifier(max_depth=6,random_state=42),
+    'Random Forest':       RandomForestClassifier(n_estimators=200,max_depth=8,random_state=42,n_jobs=-1),
+    'Gradient Boosting':   GradientBoostingClassifier(n_estimators=150,learning_rate=0.1,max_depth=5,random_state=42),
+}
+results = {}
+print(f"\n{'Model':<25} {'Accuracy':>10} {'F1':>10}")
+print("─"*48)
+for name,mdl in models.items():
+    mdl.fit(X_train_sc,y_train)
+    preds = mdl.predict(X_test_sc)
+    acc=accuracy_score(y_test,preds); f1=f1_score(y_test,preds,average='weighted')
+    results[name]={'model':mdl,'acc':acc,'f1':f1,'preds':preds}
+    print(f"{name:<25} {acc:>10.4f} {f1:>10.4f}")
+best_name=max(results,key=lambda k:results[k]['f1'])
+print(f"\nBest: {best_name}")
+print(classification_report(y_test,results[best_name]['preds'],target_names=stage_names))
+
+# CELL 9 — Tune Logistic Regression
+grid=GridSearchCV(LogisticRegression(random_state=42),{'C':[0.01,0.1,1.0,10.0],'max_iter':[500,1000]},cv=5,scoring='f1_weighted',n_jobs=-1)
+grid.fit(X_train_sc,y_train)
+best_lr=grid.best_estimator_; lr_preds=best_lr.predict(X_test_sc)
+lr_acc=accuracy_score(y_test,lr_preds); lr_f1=f1_score(y_test,lr_preds,average='weighted')
+print(f"Tuned LR: Acc={lr_acc:.4f}  F1={lr_f1:.4f}  Params={grid.best_params_}")
+print(classification_report(y_test,lr_preds,target_names=stage_names))
+
+# CELL 10 — Confusion matrix
+cm=confusion_matrix(y_test,lr_preds)
+plt.figure(figsize=(7,5))
+sns.heatmap(cm,annot=True,fmt='d',cmap='Blues',xticklabels=stage_names,yticklabels=stage_names)
+plt.title(f'LR Confusion Matrix (Acc={lr_acc:.2%})'); plt.ylabel('Actual'); plt.xlabel('Predicted')
+plt.tight_layout(); plt.savefig('confusion_matrix.png',dpi=150); plt.show()
+
+# CELL 11 — Feature importance
+rf_imp=pd.Series(results['Random Forest']['model'].feature_importances_,index=FEATURES).sort_values(ascending=True)
+rf_imp.plot(kind='barh',figsize=(8,5),color='#5c7cfa',title='Feature Importance (Random Forest)')
+plt.tight_layout(); plt.savefig('feature_importance.png',dpi=150); plt.show()
+print(f"Top features:\n{rf_imp.sort_values(ascending=False).head()}")
+
+# CELL 12 — Save model bundle
+class HypertensionModel:
+    def __init__(self,model,scaler,features):
+        self.model=model; self.scaler=scaler; self.features=features
+        self.stage_labels={0:'Normal',1:'Stage 1 Hypertension',2:'Stage 2 Hypertension',3:'Hypertensive Crisis'}
+        self.encode_maps={
+            'Gender':{'Male':0,'Female':1},
+            'Age':{'18-34':0,'35-50':1,'51-64':2,'65+':3},
+            'Severity':{'None':0,'Mild':1,'Moderate':2,'Sever':3,'Severe':3},
+            'Whendiagnoused':{'<1 Year':0,'1 - 5 Years':1,'>5 Years':2},
+            'Systolic':{'100+':0,'111 - 120':1,'121- 130':2,'121 - 130':2,'130+':3},
+            'Diastolic':{'70 - 80':0,'81 - 90':1,'91 - 100':2,'100+':3,'130+':4},
+        }
+        self.binary_cols=['History','Patient','TakeMedication','BreathShortness','VisualChanges','NoseBleeding','ControlledDiet']
+    def predict_patient(self,data):
+        row=[]
+        for feat in self.features:
+            val=str(data.get(feat,'')).strip()
+            if feat in self.encode_maps: val=self.encode_maps[feat].get(val,0)
+            elif feat in self.binary_cols: val=1 if val in ['Yes','yes','1'] else 0
+            else: val=0
+            row.append(float(val))
+        X_sc=self.scaler.transform(np.array(row).reshape(1,-1))
+        stage=int(self.model.predict(X_sc)[0]); proba=self.model.predict_proba(X_sc)[0]
+        return {'stage':stage,'label':self.stage_labels[stage],'confidence':round(float(max(proba))*100,1),
+                'probabilities':{self.stage_labels[i]:round(float(p)*100,1) for i,p in enumerate(proba)}}
+    def predict(self,X): return self.model.predict(self.scaler.transform(X))
+    def predict_proba(self,X): return self.model.predict_proba(self.scaler.transform(X))
+
+bundle=HypertensionModel(best_lr,scaler,FEATURES)
+
+# Validate
+for desc,t in [
+    ("Normal", {'Gender':'Female','Age':'18-34','History':'No','Patient':'No','TakeMedication':'No','Severity':'Mild','BreathShortness':'No','VisualChanges':'No','NoseBleeding':'No','Whendiagnoused':'<1 Year','Systolic':'100+','Diastolic':'70 - 80','ControlledDiet':'Yes'}),
+    ("Stage1",  {'Gender':'Male','Age':'35-50','History':'Yes','Patient':'No','TakeMedication':'No','Severity':'Mild','BreathShortness':'No','VisualChanges':'No','NoseBleeding':'No','Whendiagnoused':'<1 Year','Systolic':'111 - 120','Diastolic':'81 - 90','ControlledDiet':'No'}),
+    ("Stage2",  {'Gender':'Male','Age':'51-64','History':'Yes','Patient':'Yes','TakeMedication':'Yes','Severity':'Moderate','BreathShortness':'Yes','VisualChanges':'No','NoseBleeding':'No','Whendiagnoused':'1 - 5 Years','Systolic':'130+','Diastolic':'100+','ControlledDiet':'No'}),
+    ("Crisis",  {'Gender':'Male','Age':'65+','History':'Yes','Patient':'Yes','TakeMedication':'No','Severity':'Sever','BreathShortness':'Yes','VisualChanges':'Yes','NoseBleeding':'Yes','Whendiagnoused':'>5 Years','Systolic':'130+','Diastolic':'130+','ControlledDiet':'No'}),
+]:
+    r=bundle.predict_patient(t)
+    print(f"  {desc:8s} → {r['label']} ({r['confidence']}%)")
+
+with open('logreg_model.pkl','wb') as f: pickle.dump(bundle,f)
+print(f"\nModel saved!  Acc={lr_acc:.2%}  F1={lr_f1:.2%}")
+
+# CELL 13 — Download
+from google.colab import files
+files.download('logreg_model.pkl')
+files.download('eda_report.png')
+files.download('confusion_matrix.png')
+files.download('feature_importance.png')
+print("Done! Place logreg_model.pkl next to app.py and run: python app.py")
