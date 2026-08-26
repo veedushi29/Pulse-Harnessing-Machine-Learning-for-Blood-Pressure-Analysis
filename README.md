@@ -99,7 +99,3 @@ The model analyzes parameters such as systolic pressure, diastolic pressure, and
 
 ---
 
-## Author
-
-Veedushi Sahu
-
